@@ -1,3 +1,4 @@
+import json
 
 from mtkresearch.llm.prompt import MRPromptV1, MRPromptV2
 
@@ -357,9 +358,9 @@ class TestMRPromptV2:
         ]
         result = self.prompt.get_prompt(conversations)
         assert result == (
-            '<s><｜im_start｜>system\nSYS<｜im_end｜>'
-            '<｜im_start｜>user\nQUERY1<｜im_end｜>'
-            '<｜im_start｜>assistant\n'
+            '<s><|im_start|>system\nSYS<|im_end|>'
+            '<|im_start|>user\nQUERY1<|im_end|>'
+            '<|im_start|>assistant\n'
         )
 
     def test_chat_case2(self): # sys + query + response
@@ -379,9 +380,9 @@ class TestMRPromptV2:
         ]
         result = self.prompt.get_prompt(conversations)
         assert result == (
-            '<s><｜im_start｜>system\nSYS<｜im_end｜>'
-            '<｜im_start｜>user\nQUERY1<｜im_end｜>'
-            '<｜im_start｜>assistant\nRESPONSE1<｜im_end｜>'
+            '<s><|im_start|>system\nSYS<|im_end|>'
+            '<|im_start|>user\nQUERY1<|im_end|>'
+            '<|im_start|>assistant\nRESPONSE1<|im_end|>'
         )
 
     def test_chat_case3(self): # query + response + query
@@ -401,11 +402,11 @@ class TestMRPromptV2:
         ]
         result = self.prompt.get_prompt(conversations)
         assert result == (
-            '<s><｜im_start｜>system\nYou are a helpful assistant.<｜im_end｜>'
-            '<｜im_start｜>user\nQUERY1<｜im_end｜>'
-            '<｜im_start｜>assistant\nRESPONSE1<｜im_end｜>'
-            '<｜im_start｜>user\nQUERY2<｜im_end｜>'
-            '<｜im_start｜>assistant\n'
+            '<s><|im_start|>system\nYou are a helpful assistant.<|im_end|>'
+            '<|im_start|>user\nQUERY1<|im_end|>'
+            '<|im_start|>assistant\nRESPONSE1<|im_end|>'
+            '<|im_start|>user\nQUERY2<|im_end|>'
+            '<|im_start|>assistant\n'
         )
 
     def test_func_case1(self): # sys + query + f_call
@@ -434,11 +435,11 @@ class TestMRPromptV2:
         ]
         result = self.prompt.get_prompt(conversations, self.functions)
         assert result == (
-            '<s><｜im_start｜>tools\n[{"name": "get_current_weather", "description": "Get the current_weather", "parameters": {"type": "object", "properties": {"location": {"type": "string", '
-            '"description": "The city and state, e.g. San Francisco, CA"}, "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}}, "required": ["location"]}}]<｜im_end｜>'
-            '<｜im_start｜>system\nYou are a helpful assistant.<｜im_end｜>'
-            '<｜im_start｜>user\nQUERY1<｜im_end｜>'
-            '<｜im_start｜>assistant\n<｜tool_call_begin｜>{"name": "get_current_weather", "arguments": {"location": "Boston, MA"}}<｜tool_call_end｜><｜im_end｜>'
+            '<s><|im_start|>tools\n[{"name": "get_current_weather", "description": "Get the current_weather", "parameters": {"type": "object", "properties": {"location": {"type": "string", '
+            '"description": "The city and state, e.g. San Francisco, CA"}, "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}}, "required": ["location"]}}]<|im_end|>'
+            '<|im_start|>system\nYou are a helpful assistant.<|im_end|>'
+            '<|im_start|>user\nQUERY1<|im_end|>'
+            '<|im_start|>assistant\n<|tool_call_begin|>{"name": "get_current_weather", "arguments": "{\\"location\\": \\"Boston, MA\\"}"}<|tool_call_end|><|im_end|>'
         )
 
     def test_func_case2(self): # sys + query + f_call + f_response
@@ -472,13 +473,13 @@ class TestMRPromptV2:
         ]
         result = self.prompt.get_prompt(conversations, self.functions)
         assert result == (
-            '<s><｜im_start｜>tools\n[{"name": "get_current_weather", "description": "Get the current_weather", "parameters": {"type": "object", "properties": {"location": {"type": "string", '
-            '"description": "The city and state, e.g. San Francisco, CA"}, "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}}, "required": ["location"]}}]<｜im_end｜>'
-            '<｜im_start｜>system\nSYS<｜im_end｜>'
-            '<｜im_start｜>user\nQUERY1<｜im_end｜>'
-            '<｜im_start｜>assistant\n<｜tool_call_begin｜>{"call_id": "call_8jLWqlXaY3OisD24IHJLwD3G", "name": "get_current_weather", "arguments": {"location": "Boston, MA"}}<｜tool_call_end｜><｜im_end｜>'
-            '<｜im_start｜>tool_response\n{"call_id": "call_8jLWqlXaY3OisD24IHJLwD3G", "name": "get_current_weather", "content": {"temperature": "22 celsius"}}<｜im_end｜>'
-            '<｜im_start｜>assistant\n'
+            '<s><|im_start|>tools\n[{"name": "get_current_weather", "description": "Get the current_weather", "parameters": {"type": "object", "properties": {"location": {"type": "string", '
+            '"description": "The city and state, e.g. San Francisco, CA"}, "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}}, "required": ["location"]}}]<|im_end|>'
+            '<|im_start|>system\nSYS<|im_end|>'
+            '<|im_start|>user\nQUERY1<|im_end|>'
+            '<|im_start|>assistant\n<|tool_call_begin|>{"call_id": "call_8jLWqlXaY3OisD24IHJLwD3G", "name": "get_current_weather", "arguments": "{\\"location\\": \\"Boston, MA\\"}"}<|tool_call_end|><|im_end|>'
+            '<|im_start|>tool_response\n{"call_id": "call_8jLWqlXaY3OisD24IHJLwD3G", "name": "get_current_weather", "content": "{\\"temperature\\": \\"22 celsius\\"}"}<|im_end|>'
+            '<|im_start|>assistant\n'
         )
 
     def test_func_case3(self): # sys + query + f_call + f_response + response + query
@@ -520,15 +521,15 @@ class TestMRPromptV2:
         ]
         result = self.prompt.get_prompt(conversations, self.functions)
         assert result == (
-            '<s><｜im_start｜>tools\n[{"name": "get_current_weather", "description": "Get the current_weather", "parameters": {"type": "object", "properties": {"location": {"type": "string", '
-            '"description": "The city and state, e.g. San Francisco, CA"}, "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}}, "required": ["location"]}}]<｜im_end｜>'
-            '<｜im_start｜>system\nSYS<｜im_end｜>'
-            '<｜im_start｜>user\nQUERY1<｜im_end｜>'
-            '<｜im_start｜>assistant\n<｜tool_call_begin｜>{"call_id": "call_8jLWqlXaY3OisD24IHJLwD3G", "name": "get_current_weather", "arguments": {"location": "Boston, MA"}}<｜tool_call_end｜><｜im_end｜>'
-            '<｜im_start｜>tool_response\n{"call_id": "call_8jLWqlXaY3OisD24IHJLwD3G", "name": "get_current_weather", "content": {"temperature": "22 celsius"}}<｜im_end｜>'
-            '<｜im_start｜>assistant\nRESP1<｜im_end｜>'
-            '<｜im_start｜>user\nQUERY2<｜im_end｜>'
-            '<｜im_start｜>assistant\n'
+            '<s><|im_start|>tools\n[{"name": "get_current_weather", "description": "Get the current_weather", "parameters": {"type": "object", "properties": {"location": {"type": "string", '
+            '"description": "The city and state, e.g. San Francisco, CA"}, "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}}, "required": ["location"]}}]<|im_end|>'
+            '<|im_start|>system\nSYS<|im_end|>'
+            '<|im_start|>user\nQUERY1<|im_end|>'
+            '<|im_start|>assistant\n<|tool_call_begin|>{"call_id": "call_8jLWqlXaY3OisD24IHJLwD3G", "name": "get_current_weather", "arguments": "{\\"location\\": \\"Boston, MA\\"}"}<|tool_call_end|><|im_end|>'
+            '<|im_start|>tool_response\n{"call_id": "call_8jLWqlXaY3OisD24IHJLwD3G", "name": "get_current_weather", "content": "{\\"temperature\\": \\"22 celsius\\"}"}<|im_end|>'
+            '<|im_start|>assistant\nRESP1<|im_end|>'
+            '<|im_start|>user\nQUERY2<|im_end|>'
+            '<|im_start|>assistant\n'
         )
 
     def test_func_case4(self): # sys + query + response + query + f_call
@@ -564,13 +565,13 @@ class TestMRPromptV2:
         ]
         result = self.prompt.get_prompt(conversations, self.functions)
         assert result == (
-            '<s><｜im_start｜>tools\n[{"name": "get_current_weather", "description": "Get the current_weather", "parameters": {"type": "object", "properties": {"location": {"type": "string", '
-            '"description": "The city and state, e.g. San Francisco, CA"}, "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}}, "required": ["location"]}}]<｜im_end｜>'
-            '<｜im_start｜>system\nSYS<｜im_end｜>'
-            '<｜im_start｜>user\nQUERY1<｜im_end｜>'
-            '<｜im_start｜>assistant\nRESP1<｜im_end｜>'
-            '<｜im_start｜>user\nQUERY2<｜im_end｜>'
-            '<｜im_start｜>assistant\n<｜tool_call_begin｜>{"name": "get_current_weather", "arguments": {"location": "Boston, MA"}}<｜tool_call_end｜><｜im_end｜>'
+            '<s><|im_start|>tools\n[{"name": "get_current_weather", "description": "Get the current_weather", "parameters": {"type": "object", "properties": {"location": {"type": "string", '
+            '"description": "The city and state, e.g. San Francisco, CA"}, "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}}, "required": ["location"]}}]<|im_end|>'
+            '<|im_start|>system\nSYS<|im_end|>'
+            '<|im_start|>user\nQUERY1<|im_end|>'
+            '<|im_start|>assistant\nRESP1<|im_end|>'
+            '<|im_start|>user\nQUERY2<|im_end|>'
+            '<|im_start|>assistant\n<|tool_call_begin|>{"name": "get_current_weather", "arguments": "{\\"location\\": \\"Boston, MA\\"}"}<|tool_call_end|><|im_end|>'
         )
 
     def test_func_case5(self): # query + f_call(2)
@@ -600,12 +601,12 @@ class TestMRPromptV2:
         ]
         result = self.prompt.get_prompt(conversations, self.functions)
         assert result == (
-            '<s><｜im_start｜>tools\n[{"name": "get_current_weather", "description": "Get the current_weather", "parameters": {"type": "object", "properties": {"location": {"type": "string", '
-            '"description": "The city and state, e.g. San Francisco, CA"}, "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}}, "required": ["location"]}}]<｜im_end｜>'
-            '<｜im_start｜>system\nYou are a helpful assistant.<｜im_end｜>'
-            '<｜im_start｜>user\nQUERY1<｜im_end｜>'
-            '<｜im_start｜>assistant\n<｜tool_call_begin｜>{"name": "get_current_weather", "arguments": {"location": "Boston, MA"}}<｜tool_call_end｜>'
-            '<｜tool_call_begin｜>{"name": "get_current_weather", "arguments": {"location": "Taipei, Taiwan"}}<｜tool_call_end｜><｜im_end｜>'
+            '<s><|im_start|>tools\n[{"name": "get_current_weather", "description": "Get the current_weather", "parameters": {"type": "object", "properties": {"location": {"type": "string", '
+            '"description": "The city and state, e.g. San Francisco, CA"}, "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}}, "required": ["location"]}}]<|im_end|>'
+            '<|im_start|>system\nYou are a helpful assistant.<|im_end|>'
+            '<|im_start|>user\nQUERY1<|im_end|>'
+            '<|im_start|>assistant\n<|tool_call_begin|>{"name": "get_current_weather", "arguments": "{\\"location\\": \\"Boston, MA\\"}"}<|tool_call_end|>'
+            '<|tool_call_begin|>{"name": "get_current_weather", "arguments": "{\\"location\\": \\"Taipei, Taiwan\\"}"}<|tool_call_end|><|im_end|>'
         )
 
     def test_func_case6(self): # query + f_call(2) + f_response(2)
@@ -649,31 +650,32 @@ class TestMRPromptV2:
         ]
         result = self.prompt.get_prompt(conversations, self.functions)
         assert result == (
-            '<s><｜im_start｜>tools\n[{"name": "get_current_weather", "description": "Get the current_weather", "parameters": {"type": "object", "properties": {"location": {"type": "string", '
-            '"description": "The city and state, e.g. San Francisco, CA"}, "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}}, "required": ["location"]}}]<｜im_end｜>'
-            '<｜im_start｜>system\nYou are a helpful assistant.<｜im_end｜>'
-            '<｜im_start｜>user\nQUERY1<｜im_end｜>'
-            '<｜im_start｜>assistant\n<｜tool_call_begin｜>{"call_id": "ID1", "name": "get_current_weather", "arguments": {"location": "Boston, MA"}}<｜tool_call_end｜>'
-            '<｜tool_call_begin｜>{"call_id": "ID2", "name": "get_current_weather", "arguments": {"location": "Taipei, Taiwan"}}<｜tool_call_end｜><｜im_end｜>'
-            '<｜im_start｜>tool_response\n{"call_id": "ID1", "name": "get_current_weather", "content": {"temperature": "22 celsius"}}<｜im_end｜>'
-            '<｜im_start｜>tool_response\n{"call_id": "ID2", "name": "get_current_weather", "content": {"temperature": "31 celsius"}}<｜im_end｜>'
-            '<｜im_start｜>assistant\n'
+            '<s><|im_start|>tools\n[{"name": "get_current_weather", "description": "Get the current_weather", "parameters": {"type": "object", "properties": {"location": {"type": "string", '
+            '"description": "The city and state, e.g. San Francisco, CA"}, "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}}, "required": ["location"]}}]<|im_end|>'
+            '<|im_start|>system\nYou are a helpful assistant.<|im_end|>'
+            '<|im_start|>user\nQUERY1<|im_end|>'
+            '<|im_start|>assistant\n<|tool_call_begin|>{"call_id": "ID1", "name": "get_current_weather", "arguments": "{\\"location\\": \\"Boston, MA\\"}"}<|tool_call_end|>'
+            '<|tool_call_begin|>{"call_id": "ID2", "name": "get_current_weather", "arguments": "{\\"location\\": \\"Taipei, Taiwan\\"}"}<|tool_call_end|><|im_end|>'
+            '<|im_start|>tool_response\n{"call_id": "ID1", "name": "get_current_weather", "content": "{\\"temperature\\": \\"22 celsius\\"}"}<|im_end|>'
+            '<|im_start|>tool_response\n{"call_id": "ID2", "name": "get_current_weather", "content": "{\\"temperature\\": \\"31 celsius\\"}"}<|im_end|>'
+            '<|im_start|>assistant\n'
         )
 
     def test_parse_generated_str(self):
-        generated_str = 'RESP1<｜im_end｜>'
+        generated_str = 'RESP1<|im_end|>'
         assert self.prompt.parse_generated_str(generated_str) == {
             'role': 'assistant',
             'content': 'RESP1'
         }
 
-        generated_str = '<｜tool_call_begin｜>{"name": "get_current_weather", "arguments": {"location": "Boston, MA"}}<｜tool_call_end｜><｜tool_call_begin｜>{"name": "get_current_weather", "arguments": {"location": "Taipei, Taiwan"}}<｜tool_call_end｜><｜im_end｜>'
+        generated_str = '<|tool_call_begin|>{"name": "get_ans", "arguments": "{\\"determine\\": true}"}<|tool_call_end|><|tool_call_begin|>{"name": "get_current_weather", "arguments": "{\\"location\\": \\"Taipei, Taiwan\\"}"}<|tool_call_end|><|im_end|>'
         conv = self.prompt.parse_generated_str(generated_str)
         
         assert conv['role'] == 'assistant'
         assert conv['tool_calls'][0]['type'] == 'function'
-        assert conv['tool_calls'][0]['function']['name'] == 'get_current_weather'
-        assert conv['tool_calls'][0]['function']['arguments'] == '{"location": "Boston, MA"}'
+        assert conv['tool_calls'][0]['function']['name'] == 'get_ans'
+        assert conv['tool_calls'][0]['function']['arguments'] == '{"determine": true}'
+        assert json.loads(conv['tool_calls'][0]['function']['arguments']) == {'determine': True}
         assert conv['tool_calls'][1]['type'] == 'function'
         assert conv['tool_calls'][1]['function']['name'] == 'get_current_weather'
         assert conv['tool_calls'][1]['function']['arguments'] == '{"location": "Taipei, Taiwan"}'

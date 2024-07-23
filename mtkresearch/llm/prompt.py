@@ -207,8 +207,8 @@ class MRPromptV1:
 
 class MRPromptV2(MRPromptV1):
     def __init__(self, bos_token='<s>', eos_token='</s>',
-                 instance_start_token='<｜im_start｜>', instance_end_token='<｜im_end｜>',
-                 tool_call_begin_token='<｜tool_call_begin｜>', tool_call_end_token='<｜tool_call_end｜>'):
+                 instance_start_token='<|im_start|>', instance_end_token='<|im_end|>',
+                 tool_call_begin_token='<|tool_call_begin|>', tool_call_end_token='<|tool_call_end|>'):
         self.bos_token = bos_token
         self.eos_token = eos_token
         self.instance_start_token = instance_start_token
@@ -268,17 +268,17 @@ class MRPromptV2(MRPromptV1):
 
                 if i + 1 == len(conversations):
                     tool_calls_str = f'{self.tool_call_end_token}{self.tool_call_begin_token}'.join([
-                        '{' + f'"name": "{c["function"]["name"]}", "arguments": {json.dumps(json.loads(c["function"]["arguments"]))}' + '}' for c in tool_calls
+                        json.dumps({"name": c["function"]["name"], "arguments": c["function"]["arguments"]}) for c in tool_calls
                     ])
                 else:
                     tool_calls_str = f'{self.tool_call_end_token}{self.tool_call_begin_token}'.join([
-                        '{' + f'"call_id": "{c["id"]}", "name": "{c["function"]["name"]}", "arguments": {json.dumps(json.loads(c["function"]["arguments"]))}' + '}' for c in tool_calls
+                        json.dumps({"call_id": c["id"], "name": c["function"]["name"], "arguments": c["function"]["arguments"]}) for c in tool_calls
                     ])
 
                 prompt += f'{self.tool_call_begin_token}{tool_calls_str}{self.tool_call_end_token}{self.instance_end_token}'
 
             elif conv['role'] == 'tool':
-                tool_response_str = '{"call_id": "' + conv['tool_call_id'] + '", "name": "' + conv['name'] + '", "content": ' + json.dumps(json.loads(conv['content'])) + '}'
+                tool_response_str = json.dumps({"call_id": conv['tool_call_id'], "name": conv['name'], "content": conv['content']})
                 prompt += f'{self.instance_start_token}{self.tool_response_role}\n{tool_response_str}{self.instance_end_token}'
 
                 if i + 1 == len(conversations) or conversations[i + 1]['role'] != 'tool':
@@ -297,8 +297,8 @@ class MRPromptV2(MRPromptV1):
             for segment in generated_str.split(self.tool_call_begin_token)[1:]:
                 if not segment.endswith(self.tool_call_end_token):
                     raise ValueError
-                func_call = eval(segment[:-len(self.tool_call_end_token)])
-                func_call['arguments'] = json.dumps(func_call['arguments'])
+                func_call = json.loads(segment[:-len(self.tool_call_end_token)])
+                func_call['arguments'] = func_call['arguments']
                 tool_calls.append({
                     'id': self.generate_call_id(),
                     'type': 'function',
