@@ -127,7 +127,7 @@ params = SamplingParams(temperature=0.1, top_p=0.1, max_tokens=512, stop_token_i
 pp = MRPromptV2(bos_token='<s>', eos_token='</s>')
 
 def _run(ma, pp, params):
-    output_text = llm.generate(pp.get_prompt(ma.conversations, ma.functions).lstrip('<s>'), 
+    output_text = llm.generate(pp.get_prompt(ma.conversations, ma.functions).removeprefix('<s>'), 
         params)[0].outputs[0].text
     print('response:', ma.parse_assistant(output_text))
 
