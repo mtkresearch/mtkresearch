@@ -167,7 +167,7 @@ class MRPromptV1:
                     '{"call_id": "' + conv['tool_call_id'] + '", "name": "' + conv['name'] + '", "content": ' + json.dumps(json.loads(conv['content'])) + '}'
                 )
                 if i + 1 == len(conversations) or conversations[i + 1]['role'] != 'tool':
-                    prompt = prompt.rstrip(self.call_tokens[1])
+                    prompt = prompt.removesuffix(self.call_tokens[1])
                     prompt += f'{self.result_tokens[0]} [' + ', '.join(func_agg) + f'] {self.result_tokens[1]} '
 
         return prompt
@@ -199,7 +199,7 @@ class MRPromptV1:
         else:
             conv = {
                 'role': 'assistant',
-                'content': generated_str.rstrip(self.eos_token)
+                'content': generated_str.removesuffix(self.eos_token)
             }
         return conv
 
