@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='mtkresearch',
-    version='0.0.3',
+    version='0.0.5',
     license='Apache License 2.0',
     author='',
     author_email='',
