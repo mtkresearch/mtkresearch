@@ -27,18 +27,11 @@ class MRPromptV1:
         self.call_tokens = ['[FUNC_CALL]', '[/FUNC_CALL]']
         self.result_tokens = ['[FUNC_RESULT]', '[/FUNC_RESULT]']
 
-    def _font(self, sys=None):
+    def _font(self, sys=None, add_bos_token=False):
         if sys is None or not sys.strip():
-            sys = 'You are a helpful assistant.'
+            sys = 'You are a helpful AI assistant built by MediaTek Research. The user you are helping speaks Traditional Chinese and comes from Taiwan.'
         sys = sys.strip()
-        return f'{self.bos_token} {sys} '
-
-    def _font_with_functions(self, sys, functions):
-        if sys is None:
-            sys = 'You are a helpful assistant.'
-        sys = sys.strip()
-        functions = json.dumps(functions, ensure_ascii=False)
-        return f'{self.bos_token} {self.func_tokens[0]} {functions} {self.func_tokens[1]} {sys} '
+        return f'{self.bos_token}{sys} ' if add_bos_token else f'{sys} '
 
     def check_conversations(self, conversations, functions=None):
         if functions is not None:
@@ -117,7 +110,7 @@ class MRPromptV1:
                     raise ValueError
                 if corresponding_tool_calls[k]['function']['name'] != name:
                     raise ValueError
-                
+
     def check_functions(self, functions):
         for func in functions:
             if 'name' not in func or 'description' not in func or 'parameters' not in func:
@@ -139,13 +132,8 @@ class MRPromptV1:
                     if name not in func['parameters']['properties']:
                         raise ValueError
 
-    def get_prompt(self, conversations, functions=None):
-        
-        if functions:
-            self.check_functions(functions)
-            self.check_conversations(conversations, functions=functions)
-        else:
-            self.check_conversations(conversations)
+    def get_prompt(self, conversations, add_bos_token=False):
+        self.check_conversations(conversations)
 
         prompt = ''
         sys = None
@@ -153,71 +141,25 @@ class MRPromptV1:
             sys = conversations[0]['content']
             conversations = conversations[1:]
 
-        if functions:
-            prompt += self._font_with_functions(sys, functions)
-        else:
-            prompt += self._font(sys)
+        prompt += self._font(sys, add_bos_token)
 
-        func_agg = []
         for i, conv in enumerate(conversations):
             if conv['role'] == 'user':
-                prompt += f'{self.instruct_tokens[0]} {conv["content"].strip()} {self.instruct_tokens[1]} '
+                prompt += f' {self.instruct_tokens[0]} {conv["content"].strip()} {self.instruct_tokens[1]} '
             elif conv['role'] == 'assistant' and 'tool_calls' not in conv:
-                prompt += conv['content'].strip() + self.eos_token
-            elif conv['role'] == 'assistant' and 'tool_calls' in conv:
-                tool_calls = conv['tool_calls']
-
-                if i + 1 == len(conversations):
-                    tool_calls_str = '[' \
-                        + ', '.join(['{' + f'"name": "{c["function"]["name"]}", "arguments": {json.dumps(json.loads(c["function"]["arguments"]))}' + '}' for c in tool_calls]) \
-                        + ']'
-                else:
-                    tool_calls_str = '[' \
-                        + ', '.join(['{' + f'"call_id": "{c["id"]}", "name": "{c["function"]["name"]}", "arguments": {json.dumps(json.loads(c["function"]["arguments"]))}' + '}' for c in tool_calls]) \
-                        + ']'
-                prompt += f'{self.call_tokens[0]} {tool_calls_str} {self.call_tokens[1]}'
-
-            elif conv['role'] == 'tool':
-                func_agg.append(
-                    '{"call_id": "' + conv['tool_call_id'] + '", "name": "' + conv['name'] + '", "content": ' + json.dumps(json.loads(conv['content'])) + '}'
-                )
-                if i + 1 == len(conversations) or conversations[i + 1]['role'] != 'tool':
-                    prompt = _removesuffix(prompt, self.call_tokens[1])
-                    prompt += f'{self.result_tokens[0]} [' + ', '.join(func_agg) + f'] {self.result_tokens[1]} '
+                prompt += conv['content'].strip()
+                if i == len(conversations) - 1:
+                    prompt += self.eos_token
 
         return prompt
-    
-    def generate_call_id(self):
-        length = 24
-        pool = string.ascii_letters + string.digits
-        key = ''.join(random.choice(pool) for i in range(length))
-        return f'call_{key}'
 
     def parse_generated_str(self, generated_str):
         generated_str = generated_str.strip()
-        if self.call_tokens[0] in generated_str: # function call
-            text = _removeprefix(generated_str, self.call_tokens[0]).lstrip()
-            if self.call_tokens[1] in text:
-                text = text.split(self.call_tokens[1])[0].rstrip()
-            func_calls = eval(text)
-            for i in range(len(func_calls)):
-                func_calls[i]['arguments'] = json.dumps(func_calls[i]['arguments'])
-            conv = {
-                'role': 'assistant',
-                'tool_calls': [
-                    {
-                        'id': self.generate_call_id(),
-                        'type': 'function',
-                        'function': func_call
-                    } for func_call in func_calls]
-            }
-        else:
-            conv = {
-                'role': 'assistant',
-                'content': _removesuffix(generated_str, self.eos_token)
-            }
+        conv = {
+            'role': 'assistant',
+            'content': _removesuffix(generated_str, self.eos_token)
+        }
         return conv
-
 
 
 class MRPromptV2(MRPromptV1):
@@ -255,6 +197,12 @@ class MRPromptV2(MRPromptV1):
         prompt = f'{self.instance_start_token}{self.tools_role}\n{functions}{self.instance_end_token}' + \
             f'{self.instance_start_token}{self.system_role}\n{sys}{self.instance_end_token}'
         return self.bos_token + prompt if add_bos_token else prompt
+    
+    def generate_call_id(self):
+        length = 24
+        pool = string.ascii_letters + string.digits
+        key = ''.join(random.choice(pool) for i in range(length))
+        return f'call_{key}'
 
     def get_prompt(self, conversations, functions=None, add_bos_token=False):
         config = {
