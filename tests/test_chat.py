@@ -52,15 +52,16 @@ class TestMRChatManager:
                 }
             }
         ]
-        prompt = MRPromptV1()
+        prompt = MRPromptV2()
         with MRChatManager(prompt=prompt, sys_prompt='SYS', functions=functions) as manager:
             manager.user_input('Q1')
-            result = manager.parse_assistant('[FUNC_CALL] [{"name": "F", "arguments": {"E1": "A1"}}, {"name": "F", "arguments": {"E1": "A2"}}] [/FUNC_CALL]')
+            
+            result = manager.parse_assistant('<|use_tool|><|tool_call_begin|>{"name": "F", "arguments": "{\\"E1\\": \\"A1\\"}"}<|tool_call_end|><|tool_call_begin|>{"name": "F", "arguments": "{\\"E1\\": \\"A2\\"}"}<|tool_call_end|><|im_end|>')
             ids = []
             for x in result['func_calls']:
                 ids.append(x['id'])
                 manager.func_response(x['id'], {'result': f'R-{x["id"][-3:]}'})
-            manager.parse_assistant(' A3</s>')
+            manager.parse_assistant(' A3<|im_end|>')
             manager.user_input('Q2')
 
             print(manager.conversations)
