@@ -1,9 +1,6 @@
 import json
 
 
-from mtkresearch.llm.prompt import MRPromptV1, MRPromptV2
-
-
 class MRChatManager:
     def __init__(self, prompt, sys_prompt=None, functions=None):
         self.functions = functions
