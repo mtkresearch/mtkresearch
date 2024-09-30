@@ -33,9 +33,42 @@ class MRPromptV1:
         sys = sys.strip()
         return f'{self.bos_token}{sys} ' if add_bos_token else f'{sys} '
 
+    def _check_arguments(self, arguments, func_description):
+        errors = []
+        param_details = func_description['parameters']['properties']
+        required_params = func_description['parameters'].get('required', [])
+        for param in required_params:
+            if param not in arguments:
+                errors.append(f"Missing required parameter: '{param}'")
+        
+        for param, value in arguments.items():
+            if param not in param_details:
+                errors.append(f"Unexpected parameter: '{param}'")
+                continue
+            expected_type = param_details[param]['type']
+
+            if expected_type == 'string' and not isinstance(value, str):
+                errors.append(f"Incorrect type for '{param}': Expected string, got {type(value).__name__}")
+            elif expected_type == 'integer' and not isinstance(value, int):
+                errors.append(f"Incorrect type for '{param}': Expected integer, got {type(value).__name__}")
+            elif expected_type == 'float' and not isinstance(value, float):
+                errors.append(f"Incorrect type for '{param}': Expected float, got {type(value).__name__}")
+            elif expected_type == 'boolean' and not isinstance(value, bool):
+                errors.append(f"Incorrect type for '{param}': Expected boolean, got {type(value).__name__}")
+            elif expected_type == 'array' and not isinstance(value, list):
+                errors.append(f"Incorrect type for '{param}': Expected array, got {type(value).__name__}")
+
+            if 'enum' in param_details[param]:
+                if value not in param_details[param]['enum']:
+                    errors.append(f"Incorrect value for '{param}': Expected one of {param_details[param]['enum']}, got '{value}'")
+
+        if errors:
+            raise ValueError('\n'.join(errors))
+
     def check_conversations(self, conversations, functions=None):
         if functions is not None:
-            function_names = [func['name'] for func in functions]
+            function_mapping = {func['name']: func for func in functions}
+
         for i, conv in enumerate(conversations):
             role = conv['role']
             if role == 'system':
@@ -55,7 +88,7 @@ class MRPromptV1:
                     if conversations[i - 1]['role'] == 'assistant' and 'tool_calls' in conversations[i - 1]:
                         raise ValueError
 
-            elif role == 'assistant' and 'tool_calls' not in conv:
+            elif role == 'assistant' and 'tool_calls' not in conv: # assistant answer
                 if i == 0:
                     raise ValueError
                 elif not(conversations[i - 1]['role'] == 'user' or conversations[i - 1]['role'] == 'tool'):
@@ -64,7 +97,7 @@ class MRPromptV1:
                 if not isinstance(conv['content'], str):
                     raise ValueError
 
-            elif role == 'assistant' and 'tool_calls' in conv:
+            elif role == 'assistant' and 'tool_calls' in conv: # assistant tool call
                 if i == 0:
                     raise ValueError
                 elif not(conversations[i - 1]['role'] == 'user' or conversations[i - 1]['role'] == 'tool'):
@@ -76,11 +109,13 @@ class MRPromptV1:
                 for tool_call in conv['tool_calls']:
                     if tool_call['type'] != 'function':
                         raise ValueError
-                    json.loads(tool_call['function']['arguments'])
-                    if tool_call['function']['name'] not in function_names:
+                    arguments = json.loads(tool_call['function']['arguments'])
+                    name = tool_call['function']['name']
+                    if name not in function_mapping:
                         raise ValueError
+                    self._check_arguments(arguments, function_mapping[name])
 
-            elif role == 'tool':
+            elif role == 'tool': # tool response
                 if i == 0:
                     raise ValueError
                 elif not ((conversations[i - 1]['role'] == 'assistant' and 'tool_calls' in conversations[i - 1]) or (conversations[i - 1]['role'] == 'tool')):
