@@ -180,7 +180,7 @@ class MRPromptV1:
                             elif expected_type == int:
                                 # 先轉換為 float，然後轉換為 int
                                 if type(value_str) == str:
-                                    raise ValueError
+                                    raise ValueError("Expect int but get str")
                                 return int(float(value_str))
                             elif expected_type == float:
                                 return float(value_str)
