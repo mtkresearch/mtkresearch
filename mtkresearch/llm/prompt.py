@@ -51,7 +51,7 @@ class MRPromptV1:
                 errors.append(f"Incorrect type for '{param}': Expected string, got {type(value).__name__}")
             elif expected_type == 'integer' and not isinstance(value, int):
                 errors.append(f"Incorrect type for '{param}': Expected integer, got {type(value).__name__}")
-            elif expected_type == 'float' and not isinstance(value, float):
+            elif expected_type == 'float' and not (isinstance(value, float) or isinstance(value, int)):
                 errors.append(f"Incorrect type for '{param}': Expected float, got {type(value).__name__}")
             elif expected_type == 'boolean' and not isinstance(value, bool):
                 errors.append(f"Incorrect type for '{param}': Expected boolean, got {type(value).__name__}")
