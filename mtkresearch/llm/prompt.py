@@ -35,6 +35,10 @@ class MRPromptV1:
 
     def _check_arguments(self, arguments, func_description):
         errors = []
+
+        if not isinstance(func_description['parameters'], dict) or func_description['parameters'] == {}:  # for the function which no need param.
+            return
+        
         param_details = func_description['parameters']['properties']
         required_params = func_description['parameters'].get('required', [])
         for param in required_params:
@@ -51,7 +55,7 @@ class MRPromptV1:
                 errors.append(f"Incorrect type for '{param}': Expected string, got {type(value).__name__}")
             elif expected_type == 'integer' and not isinstance(value, int):
                 errors.append(f"Incorrect type for '{param}': Expected integer, got {type(value).__name__}")
-            elif expected_type == 'float' and not isinstance(value, float):
+            elif expected_type == 'float' and not (isinstance(value, float) or isinstance(value, int)):
                 errors.append(f"Incorrect type for '{param}': Expected float, got {type(value).__name__}")
             elif expected_type == 'boolean' and not isinstance(value, bool):
                 errors.append(f"Incorrect type for '{param}': Expected boolean, got {type(value).__name__}")
@@ -166,6 +170,40 @@ class MRPromptV1:
                 for name in func['parameters']['required']:
                     if name not in func['parameters']['properties']:
                         raise ValueError
+                    
+            if isinstance(func['parameters'], dict) and 'properties' in func['parameters'].keys():
+                for param, param_dict in func['parameters']['properties'].items():
+                    if isinstance(param_dict, dict) and 'default' in param_dict.keys():
+                        def parse_value(value_str, expected_type):
+                            if expected_type == str:
+                                return value_str
+                            elif expected_type == int:
+                                # 先轉換為 float，然後轉換為 int
+                                if type(value_str) == str:
+                                    raise ValueError("Expect int but get str")
+                                return int(float(value_str))
+                            elif expected_type == float:
+                                return float(value_str)
+                            elif expected_type == bool:
+                                return value_str in ('true', 'yes', '1', 'on')
+                            else:
+                                # TODO
+                                pass
+
+                        type_map = {
+                            'string': str,
+                            'integer': int,
+                            'float': float,
+                            'boolean': bool,
+                            # 'list': list,
+                            # 'dict': dict
+                        }
+
+                        expected_type = type_map.get(param_dict['type'].lower())
+                        parsed_value = parse_value(param_dict['default'], expected_type)
+                        if expected_type in type_map.keys() and not isinstance(parsed_value, expected_type):
+                            raise ValueError("Default value type mismatch")
+
 
     def get_prompt(self, conversations, add_bos_token=False):
         self.check_conversations(conversations)
