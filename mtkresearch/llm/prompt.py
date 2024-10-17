@@ -35,6 +35,10 @@ class MRPromptV1:
 
     def _check_arguments(self, arguments, func_description):
         errors = []
+
+        if func_description['parameters'] == {}:  # for the function which no need param.
+            return
+        
         param_details = func_description['parameters']['properties']
         required_params = func_description['parameters'].get('required', [])
         for param in required_params:
@@ -166,6 +170,7 @@ class MRPromptV1:
                 for name in func['parameters']['required']:
                     if name not in func['parameters']['properties']:
                         raise ValueError
+            # TODO: add the default arg. type whether matches the 'type'
 
     def get_prompt(self, conversations, add_bos_token=False):
         self.check_conversations(conversations)
