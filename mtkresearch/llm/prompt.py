@@ -36,7 +36,7 @@ class MRPromptV1:
     def _check_arguments(self, arguments, func_description):
         errors = []
 
-        if func_description['parameters'] == {}:  # for the function which no need param.
+        if not isinstance(func_description['parameters'], dict) or func_description['parameters'] == {}:  # for the function which no need param.
             return
         
         param_details = func_description['parameters']['properties']
@@ -170,7 +170,40 @@ class MRPromptV1:
                 for name in func['parameters']['required']:
                     if name not in func['parameters']['properties']:
                         raise ValueError
-            # TODO: add the default arg. type whether matches the 'type'
+                    
+            if isinstance(func['parameters'], dict) and 'properties' in func['parameters'].keys():
+                for param, param_dict in func['parameters']['properties'].items():
+                    if isinstance(param_dict, dict) and 'default' in param_dict.keys():
+                        def parse_value(value_str, expected_type):
+                            if expected_type == str:
+                                return value_str
+                            elif expected_type == int:
+                                # 先轉換為 float，然後轉換為 int
+                                if type(value_str) == str:
+                                    raise ValueError
+                                return int(float(value_str))
+                            elif expected_type == float:
+                                return float(value_str)
+                            elif expected_type == bool:
+                                return value_str in ('true', 'yes', '1', 'on')
+                            else:
+                                # TODO
+                                pass
+
+                        type_map = {
+                            'string': str,
+                            'integer': int,
+                            'float': float,
+                            'boolean': bool,
+                            # 'list': list,
+                            # 'dict': dict
+                        }
+
+                        expected_type = type_map.get(param_dict['type'].lower())
+                        parsed_value = parse_value(param_dict['default'], expected_type)
+                        if expected_type in type_map.keys() and not isinstance(parsed_value, expected_type):
+                            raise ValueError("Default value type mismatch")
+
 
     def get_prompt(self, conversations, add_bos_token=False):
         self.check_conversations(conversations)
