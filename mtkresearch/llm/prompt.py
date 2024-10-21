@@ -69,7 +69,7 @@ class MRPromptV1:
         if errors:
             raise ValueError('\n'.join(errors))
 
-    def check_conversations(self, conversations, functions=None):
+    def check_conversations(self, conversations, functions=None, isPrefResponse=False):
         if functions is not None:
             function_mapping = {func['name']: func for func in functions}
 
@@ -93,19 +93,21 @@ class MRPromptV1:
                         raise ValueError
 
             elif role == 'assistant' and 'tool_calls' not in conv: # assistant answer
-                if i == 0:
-                    raise ValueError
-                elif not(conversations[i - 1]['role'] == 'user' or conversations[i - 1]['role'] == 'tool'):
-                    raise ValueError
+                if not isPrefResponse:
+                    if i == 0:
+                        raise ValueError
+                    elif not(conversations[i - 1]['role'] == 'user' or conversations[i - 1]['role'] == 'tool'):
+                        raise ValueError
 
                 if not isinstance(conv['content'], str):
                     raise ValueError
 
             elif role == 'assistant' and 'tool_calls' in conv: # assistant tool call
-                if i == 0:
-                    raise ValueError
-                elif not(conversations[i - 1]['role'] == 'user' or conversations[i - 1]['role'] == 'tool'):
-                    raise ValueError
+                if not isPrefResponse:
+                    if i == 0:
+                        raise ValueError
+                    elif not(conversations[i - 1]['role'] == 'user' or conversations[i - 1]['role'] == 'tool'):
+                        raise ValueError
 
                 if not functions:
                     raise ValueError
@@ -277,7 +279,7 @@ class MRPromptV2(MRPromptV1):
         key = ''.join(random.choice(pool) for i in range(length))
         return f'call_{key}'
 
-    def get_prompt(self, conversations, functions=None, add_bos_token=False):
+    def get_prompt(self, conversations, functions=None, isPrefResponse=False, add_bos_token=False):
         config = {
             'add_decision_token': True,
             'add_reason': False,
@@ -286,6 +288,8 @@ class MRPromptV2(MRPromptV1):
         if functions:
             self.check_functions(functions)
             self.check_conversations(conversations, functions=functions)
+        elif isPrefResponse:
+            self.check_conversations(conversations, functions=functions, isPrefResponse=True)
         else:
             self.check_conversations(conversations)
 
@@ -295,10 +299,11 @@ class MRPromptV2(MRPromptV1):
             sys = conversations[0]['content']
             conversations = conversations[1:]
 
-        if functions:
-            prompt += self._font_with_functions(sys, functions, add_bos_token=add_bos_token)
-        else:
-            prompt += self._font(sys, add_bos_token=add_bos_token)
+        if not isPrefResponse: # is the resource is a preference response, then system prompt is not needed
+            if functions:
+                prompt += self._font_with_functions(sys, functions, add_bos_token=add_bos_token)
+            else:
+                prompt += self._font(sys, add_bos_token=add_bos_token)
 
         for i, conv in enumerate(conversations):
             if conv['role'] == 'user':
