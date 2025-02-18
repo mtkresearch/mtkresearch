@@ -485,7 +485,7 @@ class MRPromptV3(MRPromptBase):
                                                         orig_height, image_size)
         blocks = target_aspect_ratio[0] * target_aspect_ratio[1]
 
-        if use_thumbnail:
+        if use_thumbnail and blocks != 1 :
             blocks += 1
 
         return blocks
@@ -510,7 +510,7 @@ class MRPromptV3(MRPromptBase):
             if x['type'] == 'text':
                 content += x['text']
             elif x['type'] == 'image':
-                image = Image.open(x['image_path']).convert('L')
+                image = Image.open(x['image_path']).convert('RGB')
                 pixel_values = load_image(image)
                 width, height = image.size
                 image_content_token_num = self._get_image_content_token_num(width, height)
