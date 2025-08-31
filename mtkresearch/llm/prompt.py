@@ -3,6 +3,7 @@ import string
 import random
 import sys
 import ast
+import re
 from datetime import datetime
 from PIL import Image
 
@@ -671,7 +672,10 @@ class MRPromptV3(MRPromptBase):
         generated_str = _removeprefix(generated_str, self.answer_token).strip()
         generated_str = _removesuffix(generated_str, self.turn_end_token).strip()
 
-        if self.tool_call_token in generated_str: # function call
+        # Check if generated_str contains function call format using regex
+        function_call_pattern = r'\[[\w_]+\([^)]*\)(?:,[\w_]+\([^)]*\))*\]'
+        has_function_call = self.tool_call_token in generated_str or re.search(function_call_pattern, generated_str)
+        if has_function_call: # function call
             generated_str = _removeprefix(generated_str, self.tool_call_token).strip()
             
             try:
